@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routes.setup import router as setup_router
 from routes.priors import router as priors_router
+from routes.voice import router as voice_router
 
 app = FastAPI(
     title="OpenPriors",
@@ -30,6 +31,7 @@ app.add_middleware(
 
 app.include_router(setup_router)
 app.include_router(priors_router)
+app.include_router(voice_router)
 
 
 @app.get("/")
