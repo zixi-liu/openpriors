@@ -39,7 +39,17 @@ export default function Sidebar({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [width, setWidth] = useState(240)
   const [isDragging, setIsDragging] = useState(false)
+  const [menuOpen, setMenuOpen] = useState<string | null>(null)
   const sidebarRef = useRef<HTMLElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -138,17 +148,29 @@ export default function Sidebar({
                   <span className="flex-1 text-sm truncate" style={{ opacity: 0.7 }}>
                     {material.title}
                   </span>
-                  {onDeleteMaterial && (
+                  <div className="relative flex-shrink-0">
                     <button
-                      onClick={(e) => { e.stopPropagation(); onDeleteMaterial(material.id) }}
-                      className="opacity-0 group-hover/item:opacity-100 p-0.5 rounded hover:bg-[#00000010] flex-shrink-0 mt-0.5"
-                      style={{ color: 'var(--op-font-color)', opacity: 0.3 }}
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === material.id ? null : material.id) }}
+                      className="opacity-0 group-hover/item:opacity-100 p-0.5 rounded hover:bg-[#00000010]"
+                      style={{ color: 'var(--op-font-color)', opacity: 0.4 }}
                     >
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                      </svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                     </button>
-                  )}
+                    {menuOpen === material.id && (
+                      <div ref={menuRef} className="absolute right-0 top-6 w-36 bg-white border border-[#E3E2E0] rounded-lg shadow-lg py-1 z-50">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(material.title); setMenuOpen(null) }}
+                          className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F5]" style={{ color: 'var(--op-font-color)' }}
+                        >Share</button>
+                        {onDeleteMaterial && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteMaterial(material.id); setMenuOpen(null) }}
+                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F5] text-red-500"
+                          >Move to trash</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -192,17 +214,29 @@ export default function Sidebar({
               >
                 <div className="truncate pr-5">{session.title || 'New Page'}</div>
                 <div className="text-[10px] mt-0.5" style={{ opacity: 0.4 }}>{session.date}</div>
-                {onDeleteSession && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
                   <button
-                    onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id) }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 opacity-0 group-hover/session:opacity-100 transition-opacity"
-                    style={{ color: 'var(--op-font-color)', opacity: 0.2 }}
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === session.id ? null : session.id) }}
+                    className="p-0.5 opacity-0 group-hover/session:opacity-100 transition-opacity rounded hover:bg-[#00000010]"
+                    style={{ color: 'var(--op-font-color)', opacity: 0.4 }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                    </svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                   </button>
-                )}
+                  {menuOpen === session.id && (
+                    <div ref={menuRef} className="absolute right-0 top-6 w-36 bg-white border border-[#E3E2E0] rounded-lg shadow-lg py-1 z-50">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(session.title); setMenuOpen(null) }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F5]" style={{ color: 'var(--op-font-color)' }}
+                      >Share</button>
+                      {onDeleteSession && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); setMenuOpen(null) }}
+                          className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F5] text-red-500"
+                        >Move to trash</button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}

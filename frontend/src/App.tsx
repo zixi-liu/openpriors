@@ -121,6 +121,12 @@ export default function App() {
           onViewMaterial={(id) => setViewingMaterialId(id)}
           onNewPage={() => { setActiveSessionId(null); setPageKey(k => k + 1) }}
           onSelectSession={(id) => { setActiveSessionId(id); setPageKey(k => k + 1) }}
+          onDeleteSession={async (id) => {
+            try {
+              await fetch(`/api/osmosis/sessions/${id}`, { method: 'DELETE' })
+              setSessions(prev => prev.filter(s => s.id !== id))
+            } catch {}
+          }}
         />
         <main className="flex-1 overflow-auto">
           <Routes>
