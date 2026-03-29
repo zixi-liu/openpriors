@@ -13,6 +13,7 @@ export default function App() {
   const [sessions, setSessions] = useState<{ id: string; title: string; date: string }[]>([])
   const [viewingMaterialId, setViewingMaterialId] = useState<string | null>(null)
   const [pageKey, setPageKey] = useState(0)
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/setup/status')
@@ -118,12 +119,13 @@ export default function App() {
           onToggleMaterial={toggleMaterial}
           onDeleteMaterial={deleteMaterial}
           onViewMaterial={(id) => setViewingMaterialId(id)}
-          onNewPage={() => setPageKey(k => k + 1)}
+          onNewPage={() => { setActiveSessionId(null); setPageKey(k => k + 1) }}
+          onSelectSession={(id) => { setActiveSessionId(id); setPageKey(k => k + 1) }}
         />
         <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={<Navigate to="/capture" />} />
-            <Route path="/capture" element={<CapturePage key={pageKey} />} />
+            <Route path="/capture" element={<CapturePage key={pageKey} sessionId={activeSessionId} />} />
             <Route path="/priors" element={<PriorsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>

@@ -136,34 +136,50 @@ function useChatContext() {
   return ctx
 }
 
-export default function ChatProvider({ children }: { children: React.ReactNode }) {
-  const [sessionId, setSessionId] = useState<string | null>(null)
+export default function ChatProvider({ children, existingSessionId }: { children: React.ReactNode; existingSessionId?: string }) {
+  const [sessionId, setSessionId] = useState<string | null>(existingSessionId || null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Create session and get greeting on mount
+  // Load existing session or create new one
   useEffect(() => {
     const init = async () => {
       setLoading(true)
       try {
-        const createRes = await fetch('/api/osmosis/sessions', { method: 'POST' })
-        const createData = await createRes.json()
-        if (!createData.success) return
-        const sid = createData.session_id
-        setSessionId(sid)
+        if (existingSessionId) {
+          // Load existing session messages
+          const res = await fetch(`/api/osmosis/sessions/${existingSessionId}`)
+          const data = await res.json()
+          if (data.success && data.messages) {
+            setSessionId(existingSessionId)
+            setMessages(data.messages.map((m: any) => ({
+              role: m.role,
+              content: m.content,
+              options: m.options || undefined,
+            })))
+          }
+        } else {
+          // Create new session
+          const createRes = await fetch('/api/osmosis/sessions', { method: 'POST' })
+          const createData = await createRes.json()
+          if (!createData.success) return
+          const sid = createData.session_id
+          setSessionId(sid)
 
-        const chatRes = await fetch('/api/osmosis/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sid,
-            message: '[SYSTEM] User just opened a new session. Greet them briefly, mention their most recently added learning material if any, and ask what they are interested in working on today.',
-          }),
-        })
-        const chatData = await chatRes.json()
-        if (chatData.success) {
-          setMessages([{ role: 'assistant', content: chatData.message, options: chatData.options }])
+          // Get greeting
+          const chatRes = await fetch('/api/osmosis/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: sid,
+              message: '[SYSTEM] User just opened a new session. Greet them briefly, mention their most recently added learning material if any, and ask what they are interested in working on today.',
+            }),
+          })
+          const chatData = await chatRes.json()
+          if (chatData.success) {
+            setMessages([{ role: 'assistant', content: chatData.message, options: chatData.options }])
+          }
         }
       } catch {
         setMessages([{ role: 'assistant', content: "Hey! What would you like to work on today?" }])

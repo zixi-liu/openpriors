@@ -17,7 +17,7 @@ interface CaptureResult {
   priors: Prior[]
 }
 
-export default function CapturePage() {
+export default function CapturePage({ sessionId }: { sessionId?: string | null }) {
   const [titleValue, setTitleValue] = useState('')
   const titleRef = useRef<HTMLHeadingElement>(null)
 
@@ -226,7 +226,7 @@ export default function CapturePage() {
   }
 
   return (
-    <ChatProvider>
+    <ChatProvider existingSessionId={sessionId || undefined}>
     <div className="h-full flex flex-col">
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">

@@ -20,6 +20,7 @@ interface SidebarProps {
   onDeleteMaterial?: (id: string) => void
   onViewMaterial?: (id: string) => void
   onNewPage?: () => void
+  onSelectSession?: (id: string) => void
   onDeleteSession?: (id: string) => void
 }
 
@@ -30,6 +31,7 @@ export default function Sidebar({
   onDeleteMaterial,
   onViewMaterial,
   onNewPage,
+  onSelectSession,
   onDeleteSession,
 }: SidebarProps) {
   const navigate = useNavigate()
@@ -186,9 +188,9 @@ export default function Sidebar({
                   isActive ? 'bg-[#EDEDEC] font-medium' : 'hover:bg-[#00000008]'
                 }`}
                 style={{ opacity: isActive ? 1 : 0.7 }}
-                onClick={() => navigate(`/session/${session.id}`)}
+                onClick={() => { onSelectSession?.(session.id); navigate('/capture') }}
               >
-                <div className="truncate pr-5">{session.title || 'Untitled Session'}</div>
+                <div className="truncate pr-5">{session.title || 'New Page'}</div>
                 <div className="text-[10px] mt-0.5" style={{ opacity: 0.4 }}>{session.date}</div>
                 {onDeleteSession && (
                   <button
