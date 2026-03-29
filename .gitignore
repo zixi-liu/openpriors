@@ -8,3 +8,4 @@ build/
 node_modules/
 knowledge_cache/
 .DS_Store
+CLAUDE.md
