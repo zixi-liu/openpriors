@@ -131,7 +131,7 @@ export default function App() {
         <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={<Navigate to="/capture" />} />
-            <Route path="/capture" element={<CapturePage key={pageKey} sessionId={activeSessionId} />} />
+            <Route path="/capture" element={<CapturePage key={pageKey} sessionId={activeSessionId} onAssetAdded={fetchAssets} />} />
             <Route path="/priors" element={<PriorsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>

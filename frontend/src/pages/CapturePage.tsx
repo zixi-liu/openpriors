@@ -17,7 +17,7 @@ interface CaptureResult {
   priors: Prior[]
 }
 
-export default function CapturePage({ sessionId }: { sessionId?: string | null }) {
+export default function CapturePage({ sessionId, onAssetAdded }: { sessionId?: string | null; onAssetAdded?: () => void }) {
   const [titleValue, setTitleValue] = useState('')
   const titleRef = useRef<HTMLHeadingElement>(null)
 
@@ -81,7 +81,7 @@ export default function CapturePage({ sessionId }: { sessionId?: string | null }
         body: JSON.stringify({ content: text, source: file.name }),
       })
       const data = await res.json()
-      if (data.success) setResult({ title: data.title, summary: data.summary, priors: data.priors })
+      if (data.success) { setResult({ title: data.title, summary: data.summary, priors: data.priors }); onAssetAdded?.() }
       else setError(data.error || 'Failed to extract priors')
     } catch { setError('Could not connect to server') }
     finally { setIsAnalyzing(false); e.target.value = '' }
@@ -100,7 +100,7 @@ export default function CapturePage({ sessionId }: { sessionId?: string | null }
         body: JSON.stringify({ url: linkUrl }),
       })
       const data = await res.json()
-      if (data.success) setResult({ title: data.title, summary: data.summary, priors: data.priors })
+      if (data.success) { setResult({ title: data.title, summary: data.summary, priors: data.priors }); onAssetAdded?.() }
       else setError(data.error || 'Failed to extract priors')
     } catch { setError('Could not connect to server') }
     finally { setIsAnalyzing(false); setLinkUrl('') }
@@ -207,7 +207,7 @@ export default function CapturePage({ sessionId }: { sessionId?: string | null }
         body: JSON.stringify({ conversation: storyQA }),
       })
       const data = await res.json()
-      if (data.success) setResult({ title: data.title, summary: data.summary, priors: data.priors })
+      if (data.success) { setResult({ title: data.title, summary: data.summary, priors: data.priors }); onAssetAdded?.() }
       else setError(data.error || 'Failed to extract priors')
     } catch { setError('Could not connect to server') }
     finally {
