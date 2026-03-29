@@ -263,17 +263,10 @@ export default function CapturePage({ sessionId }: { sessionId?: string | null }
               className="flex items-center gap-2 px-4 py-2.5 border border-[#E3E2E0] rounded-lg text-sm hover:bg-[#F7F7F5] transition-colors disabled:opacity-50"
               style={{ color: 'var(--op-font-color)', minWidth: 200 }}
             >
-              {isAnalyzing ? (
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              )}
-              {isAnalyzing ? 'Analyzing...' : 'Add something new'}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Add something new
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`ml-auto transition-transform ${isUploadDropdownOpen ? 'rotate-180' : ''}`}>
                 <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -318,6 +311,12 @@ export default function CapturePage({ sessionId }: { sessionId?: string | null }
 
         <input ref={fileInputRef} type="file" accept=".pdf,.txt,.md" className="hidden" onChange={handleFileUpload} />
 
+        {isAnalyzing && (
+          <div className="flex items-center gap-2 ml-1">
+            <div className="w-3.5 h-3.5 border-2 border-[#6B4F3A]/20 border-t-[#6B4F3A] rounded-full animate-spin" />
+            <span className="text-sm" style={{ color: 'var(--op-font-color)', opacity: 0.4 }}>Analyzing...</span>
+          </div>
+        )}
 
         {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm ml-1">{error}</div>}
 
