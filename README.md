@@ -1,8 +1,7 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/zixi-liu/openpriors/main/assets/openpriors-logo.png" alt="OpenPriors" width="60" />
-</p>
-
-<h1 align="center">OpenPriors</h1>
+<h1 align="center">
+  <img src="https://raw.githubusercontent.com/zixi-liu/openpriors/main/assets/openpriors-logo.png" alt="OpenPriors" width="36" valign="middle" />
+  OpenPriors
+</h1>
 
 <p align="center">
   <strong>Your personal AI assistant that turns what you learn into what you do.</strong>
