@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -34,7 +36,24 @@ export function ChatMessages() {
               }`}
               style={msg.role === 'assistant' ? { color: 'var(--op-font-color)' } : {}}
             >
-              {msg.content}
+              {msg.role === 'assistant' ? (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-semibold mt-3 mb-1">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
+                    p: ({ children }) => <p className="my-1.5">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc list-outside ml-5 my-2 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-outside ml-5 my-2 space-y-1.5">{children}</ol>,
+                    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                    blockquote: ({ children }) => <blockquote className="border-l-2 border-[#E3E2E0] pl-3 my-2 italic" style={{ opacity: 0.7 }}>{children}</blockquote>,
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
+              ) : msg.content}
             </div>
 
             {msg.options && msg.options.length > 0 && (
