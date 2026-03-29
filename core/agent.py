@@ -202,9 +202,15 @@ AGENT_TYPE_MAP = {
 
 def detect_sub_agent(conversation: List[Dict[str, Any]], user_message: str) -> Optional[str]:
     """Check if we should route to a sub-agent based on conversation history."""
-    # Check current message
+    # Check for explicit type tag [type:guided_reflection]
+    if "[type:" in user_message:
+        type_tag = user_message.split("[type:")[1].split("]")[0]
+        if type_tag in AGENT_TYPE_MAP:
+            return AGENT_TYPE_MAP[type_tag]
+
+    # Check current message by keyword
     msg_lower = user_message.lower()
-    if msg_lower.startswith("i'd like to:") or msg_lower.startswith("i'd like to:"):
+    if msg_lower.startswith("i'd like to:"):
         for keyword, agent in AGENT_TYPE_MAP.items():
             if keyword.replace("_", " ") in msg_lower:
                 return agent
@@ -241,21 +247,29 @@ async def run_agent_turn(
     sub_agent = detect_sub_agent(conversation, user_message)
     if sub_agent:
         context = get_sub_agent_context(conversation)
-        # Filter conversation to only user/assistant messages (no tool calls)
-        clean_convo = [m for m in conversation if m.get("role") in ("user", "assistant") and not m.get("tool_calls")]
+        # Strip type tags from message
+        clean_message = user_message.split("[type:")[0].strip() if "[type:" in user_message else user_message
+        # Filter conversation to only user/assistant messages, strip routing tags
+        clean_convo = []
+        for m in conversation:
+            if m.get("role") in ("user", "assistant") and not m.get("tool_calls"):
+                content = m.get("content", "")
+                content = content.split("[ACTIVE_AGENT:")[0].strip() if "[ACTIVE_AGENT:" in content else content
+                content = content.split("[type:")[0].strip() if "[type:" in content else content
+                clean_convo.append({"role": m["role"], "content": content})
 
         if sub_agent == "reflection":
             from core.agents.reflection import run_reflection_turn
-            result = await run_reflection_turn(clean_convo, user_message, context)
+            result = await run_reflection_turn(clean_convo, clean_message, context)
         elif sub_agent == "planner":
             from core.agents.planner import run_planner_turn
-            result = await run_planner_turn(clean_convo, user_message, context)
+            result = await run_planner_turn(clean_convo, clean_message, context)
         elif sub_agent == "coach":
             from core.agents.coach import run_coach_turn
-            result = await run_coach_turn(clean_convo, user_message, context)
+            result = await run_coach_turn(clean_convo, clean_message, context)
         elif sub_agent == "writer":
             from core.agents.writer import run_writer_turn
-            result = await run_writer_turn(clean_convo, user_message, context)
+            result = await run_writer_turn(clean_convo, clean_message, context)
         else:
             result = None
 

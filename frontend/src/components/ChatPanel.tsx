@@ -238,7 +238,7 @@ export default function ChatProvider({ children, existingSessionId, onSessionRea
   }
 
   const selectOption = (option: Option) => {
-    sendMessage(`I'd like to: ${option.title}`)
+    sendMessage(`I'd like to: ${option.title} [type:${option.type}]`)
   }
 
   return (
