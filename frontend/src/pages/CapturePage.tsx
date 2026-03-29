@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import PriorCard from '../components/PriorCard.tsx'
 
 interface Prior {
@@ -42,8 +43,7 @@ export default function CapturePage() {
   const [storyComplete, setStoryComplete] = useState(false)
   const recognitionRef = useRef<any>(null)
 
-  // Osmosis
-  const [osmosisModalOpen, setOsmosisModalOpen] = useState(false)
+  const navigate = useNavigate()
 
   // Results
   const [result, setResult] = useState<CaptureResult | null>(null)

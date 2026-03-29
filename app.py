@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routes.setup import router as setup_router
 from routes.assets import router as assets_router
+from routes.osmosis import router as osmosis_router
 
 app = FastAPI(
     title="OpenPriors",
@@ -30,6 +31,7 @@ app.add_middleware(
 
 app.include_router(setup_router)
 app.include_router(assets_router)
+app.include_router(osmosis_router)
 
 
 @app.get("/")

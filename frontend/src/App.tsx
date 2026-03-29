@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar.tsx'
 import CapturePage from './pages/CapturePage.tsx'
 import PriorsPage from './pages/PriorsPage.tsx'
 import SettingsPage from './pages/SettingsPage.tsx'
+import OsmosisPage from './pages/OsmosisPage.tsx'
 
 export default function App() {
   const [configured, setConfigured] = useState<boolean | null>(null)
@@ -101,6 +102,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/capture" />} />
             <Route path="/capture" element={<CapturePage />} />
             <Route path="/priors" element={<PriorsPage />} />
+            <Route path="/osmosis" element={<OsmosisPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </main>
