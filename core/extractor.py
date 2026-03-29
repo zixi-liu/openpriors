@@ -64,6 +64,40 @@ Extract as many priors as the content supports. Focus on actionable, life-changi
 Return ONLY valid JSON."""
 
 
+FORMAT_CONTENT_PROMPT = """Reformat the following raw text into clean, well-structured markdown for reading.
+
+Rules:
+- Add appropriate ## headers to break up sections
+- Use bullet points for lists of items
+- Use **bold** for key terms or concepts
+- Use > blockquotes for notable quotes
+- Break long paragraphs into shorter ones
+- Keep all the original information — don't add or remove content
+- Keep it concise — no filler
+
+Raw text:
+---
+{content}
+---
+
+Return ONLY the formatted markdown, no explanation."""
+
+
+async def format_for_display(content: str) -> str:
+    """Use LLM to format raw text into structured markdown."""
+    if '\n\n' in content or '\n- ' in content or '\n#' in content:
+        return content
+
+    from core.llm import complete
+    response = await complete(
+        prompt=FORMAT_CONTENT_PROMPT.format(content=content[:10000]),
+        model="gpt-4o-mini",
+        temperature=0.3,
+        max_tokens=4000,
+    )
+    return response.content.strip()
+
+
 async def extract_priors(content: str, source_hint: str = "") -> Dict[str, Any]:
     """Extract actionable priors from raw content."""
     prompt = EXTRACT_PROMPT.format(content=content[:25000])

@@ -2,26 +2,6 @@ import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
-function formatContent(content: string): string {
-  // If already has markdown formatting (line breaks, bullets), return as is
-  if (content.includes('\n\n') || content.includes('\n- ') || content.includes('\n#')) {
-    return content
-  }
-  // Raw text blob — split into paragraphs every 2-3 sentences
-  const sentences = content.split(/(?<=[.!?])\s+/)
-  const paragraphs: string[] = []
-  let current: string[] = []
-  for (const s of sentences) {
-    current.push(s)
-    if (current.length >= 3) {
-      paragraphs.push(current.join(' '))
-      current = []
-    }
-  }
-  if (current.length > 0) paragraphs.push(current.join(' '))
-  return paragraphs.join('\n\n')
-}
-
 interface MaterialViewerModalProps {
   materialId: string
   onClose: () => void
@@ -127,7 +107,7 @@ export default function MaterialViewerModal({ materialId, onClose }: MaterialVie
                   a: ({ href, children }) => <a href={href} className="underline" target="_blank" rel="noopener noreferrer">{children}</a>,
                 }}
               >
-                {formatContent(material.content)}
+                {material.content}
               </ReactMarkdown>
             </div>
           ) : (

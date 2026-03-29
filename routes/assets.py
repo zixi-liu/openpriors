@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 from core.llm import complete, complete_json, parse_json
-from core.extractor import extract_priors, extract_from_url
+from core.extractor import extract_priors, extract_from_url, format_for_display
 from core.storage import save_priors, save_material, get_material, get_all_materials, delete_material, get_all_priors, search_priors, get_prior
 from core.embeddings import index_material, index_prior, hybrid_search
 
@@ -55,9 +55,10 @@ async def upload_text(request: UploadTextRequest):
     try:
         result = await extract_priors(request.content, source_hint=request.source or "")
         title = result.get("title", request.source or "Untitled")
+        formatted = await format_for_display(request.content)
         material_id = save_material(
             title=title,
-            content=request.content,
+            content=formatted,
             source_type="text",
             summary=result.get("summary", ""),
         )
@@ -103,9 +104,10 @@ async def upload_url(request: UploadURLRequest):
             # Articles, blogs, other: store raw content
             stored_content = content
 
+        formatted_content = await format_for_display(stored_content)
         material_id = save_material(
             title=title,
-            content=stored_content,
+            content=formatted_content,
             source_type="youtube" if is_youtube else "url",
             url=request.url,
             summary=result.get("summary", ""),
