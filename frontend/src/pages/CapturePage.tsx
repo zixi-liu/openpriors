@@ -17,7 +17,7 @@ interface CaptureResult {
   priors: Prior[]
 }
 
-export default function CapturePage({ sessionId, onAssetAdded }: { sessionId?: string | null; onAssetAdded?: () => void }) {
+export default function CapturePage({ sessionId, onAssetAdded, onSessionCreated }: { sessionId?: string | null; onAssetAdded?: () => void; onSessionCreated?: () => void }) {
   const [titleValue, setTitleValue] = useState('')
   const titleRef = useRef<HTMLHeadingElement>(null)
   const chatSessionIdRef = useRef<string | null>(sessionId || null)
@@ -227,7 +227,7 @@ export default function CapturePage({ sessionId, onAssetAdded }: { sessionId?: s
   }
 
   return (
-    <ChatProvider existingSessionId={sessionId || undefined} onSessionReady={(id) => { chatSessionIdRef.current = id }}>
+    <ChatProvider existingSessionId={sessionId || undefined} onSessionReady={(id) => { chatSessionIdRef.current = id; onSessionCreated?.() }}>
     <SessionTitleSync titleRef={titleRef} setTitleValue={setTitleValue} />
     <div className="h-full flex flex-col">
       {/* Scrollable content */}

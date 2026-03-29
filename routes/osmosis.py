@@ -106,12 +106,6 @@ async def osmosis_chat(request: ChatRequest):
         options_json = json.dumps(result.options) if result.options else None
         add_session_message(request.session_id, "assistant", result.content, options_json)
 
-        # Auto-title: use first real user message (skip [SYSTEM] messages)
-        if session["title"] == "New Page" and not request.message.startswith("[SYSTEM]"):
-            title = request.message[:50].strip()
-            if len(request.message) > 50:
-                title += "..."
-            update_session_title(request.session_id, title)
 
         response: Dict[str, Any] = {
             "success": True,
