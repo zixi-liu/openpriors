@@ -26,11 +26,11 @@ export default function PriorCard({ prior, showPracticeCount, showLastPracticed 
       {/* Practice + Trigger */}
       <div className="space-y-2">
         <div className="flex items-start gap-2">
-          <span className="mt-0.5 shrink-0">🎯</span>
+          <span className="mt-0.5 shrink-0 text-sm" style={{ color: 'var(--op-font-color)', opacity: 0.3 }}>✦</span>
           <span className="text-sm" style={{ color: 'var(--op-font-color)', opacity: 0.5 }}>{prior.practice}</span>
         </div>
         <div className="flex items-start gap-2">
-          <span className="mt-0.5 shrink-0">⚡</span>
+          <span className="mt-0.5 shrink-0 text-sm" style={{ color: 'var(--op-font-color)', opacity: 0.3 }}>⊹</span>
           <span className="text-sm" style={{ color: 'var(--op-font-color)', opacity: 0.5 }}>{prior.trigger}</span>
         </div>
       </div>
