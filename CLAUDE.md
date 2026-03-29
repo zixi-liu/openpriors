@@ -59,6 +59,10 @@ openpriors/
 └── tests/
 ```
 
+## Important Rules
+- Never reference OpenClaw in code, comments, or docstrings — this is an independent project
+- Prompts should be generic (any learning domain), not career-specific
+
 ## Code Style
 - Python: follow existing patterns, type hints preferred
 - TypeScript: ES modules, strict mode
