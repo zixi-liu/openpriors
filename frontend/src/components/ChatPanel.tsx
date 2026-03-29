@@ -156,21 +156,15 @@ export default function ChatPanel() {
               style={{ background: 'var(--op-bg)', color: 'var(--op-font-color)', minHeight: '56px' }}
             />
             <div className="absolute right-3 bottom-3">
-              {input.trim() ? (
-                <button
-                  onClick={() => sendMessage()}
-                  disabled={loading}
-                  className="p-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:opacity-40 transition-colors"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                </button>
-              ) : (
-                <span className="text-xs" style={{ color: 'var(--op-font-color)', opacity: 0.3 }}>
-                  Enter to send
-                </span>
-              )}
+              <button
+                onClick={() => sendMessage()}
+                disabled={loading || !input.trim()}
+                className="p-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:opacity-40 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
