@@ -37,7 +37,12 @@ Return JSON:
 Return ONLY valid JSON."""
 
 
-FOLLOWUP_QUESTION_PROMPT = """You are a reflective learning coach helping someone deeply process what they learned.
+def build_followup_prompt(conversation: str, question_number: int) -> str:
+    final_note = ""
+    if question_number == 3:
+        final_note = "Make this the final question — help them commit to one specific, small action they can take this week."
+
+    return f"""You are a reflective learning coach helping someone deeply process what they learned.
 
 Here is the conversation so far:
 {conversation}
@@ -51,7 +56,7 @@ Based on their answers, generate the NEXT probing question. Use these reflection
 
 Pick the technique that best fits what they just said. Don't repeat a style already used.
 
-This is question {question_number} of 3. {"Make this the final question — help them commit to one specific, small action they can take this week." if question_number == 3 else ""}
+This is question {question_number} of 3. {final_note}
 
 Return JSON:
 {{"question": "your question here"}}
@@ -89,10 +94,7 @@ async def get_next_question(request: SocraticRequest):
             for qa in request.conversation
         ])
 
-        prompt = FOLLOWUP_QUESTION_PROMPT.format(
-            conversation=convo_text,
-            question_number=request.question_number,
-        )
+        prompt = build_followup_prompt(convo_text, request.question_number)
 
         result = await complete_json(prompt)
         return JSONResponse({
