@@ -84,7 +84,7 @@ export default function PlanCard({ title, goals: initialGoals }: PlanCardProps) 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-[#E3E2E0] flex items-center justify-between" style={{ background: 'rgba(0,0,0,0.02)' }}>
         <p className="text-xs" style={{ color: 'var(--op-font-color)', opacity: 0.4 }}>
-          {submitted ? '✅ Goals submitted — reminders are set' : `${goals.filter(g => g.due_date).length}/${goals.length} dates set`}
+          {submitted ? 'Goals submitted — reminders are set' : `${goals.filter(g => g.due_date).length}/${goals.length} dates set`}
         </p>
         {!submitted && (
           <button
