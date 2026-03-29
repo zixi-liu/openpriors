@@ -120,7 +120,7 @@ export function ChatInput() {
             placeholder="Ask about your learnings..."
             disabled={loading}
             rows={1}
-            className="w-full text-sm px-4 pt-3 pb-10 rounded-xl border border-[#E3E2E0] focus:outline-none focus:border-gray-400 disabled:opacity-50 resize-none"
+            className="w-full text-base px-4 pt-3 pb-10 rounded-xl border border-[#E3E2E0] focus:outline-none focus:border-gray-400 disabled:opacity-50 resize-none"
             style={{ background: 'var(--op-bg)', color: 'var(--op-font-color)', minHeight: '56px' }}
           />
           <div className="absolute right-3 bottom-3">
