@@ -239,7 +239,7 @@ def record_practice(prior_id: str):
 # Sessions
 # ============================================================
 
-def create_session(title: str = "New Session") -> str:
+def create_session(title: str = "New Page") -> str:
     session_id = str(uuid.uuid4())[:8]
     now = datetime.now().isoformat()
     conn = _get_db()

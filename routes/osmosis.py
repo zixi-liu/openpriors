@@ -105,7 +105,7 @@ async def osmosis_chat(request: ChatRequest):
         add_session_message(request.session_id, "assistant", result.content, options_json)
 
         # Auto-title: use first real user message (skip [SYSTEM] messages)
-        if session["title"] == "New Session" and not request.message.startswith("[SYSTEM]"):
+        if session["title"] == "New Page" and not request.message.startswith("[SYSTEM]"):
             title = request.message[:50].strip()
             if len(request.message) > 50:
                 title += "..."

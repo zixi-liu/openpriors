@@ -157,11 +157,11 @@ export default function Sidebar({
       {/* My Osmosis Sessions */}
       {!isCollapsed && (
         <div className="px-3 mt-3 mb-1">
-          <span className="text-sm font-bold tracking-wider" style={{ opacity: 0.7 }}>My Sessions</span>
+          <span className="text-sm font-bold tracking-wider" style={{ opacity: 0.7 }}>My Projects</span>
         </div>
       )}
 
-      {/* New Session */}
+      {/* New Page */}
       {!isCollapsed && (
       <div className="px-2 pb-2">
         <button
@@ -172,7 +172,7 @@ export default function Sidebar({
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
             <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          <span>New Session</span>
+          <span>New Page</span>
         </button>
       </div>
       )}
