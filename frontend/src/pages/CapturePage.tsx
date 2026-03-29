@@ -323,7 +323,7 @@ export default function CapturePage({ sessionId }: { sessionId?: string | null }
         {result && (
           <div className="animate-fade-in space-y-6 ml-1">
             <div>
-              <h2 className="text-sm font-bold tracking-wider" style={{ color: 'var(--op-font-color)', opacity: 0.7 }}>Extracted Priors</h2>
+              <h2 className="text-sm font-bold tracking-wider" style={{ color: 'var(--op-font-color)', opacity: 0.7 }}>{result.title}</h2>
               <p className="text-sm mt-1" style={{ color: 'var(--op-font-color)', opacity: 0.5 }}>{result.summary}</p>
             </div>
             <div className="space-y-3">
