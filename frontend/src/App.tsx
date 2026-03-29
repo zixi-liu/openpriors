@@ -2,15 +2,16 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { ThemeProvider } from './context/ThemeContext.tsx'
 import Sidebar from './components/Sidebar.tsx'
+import MaterialViewerModal from './components/MaterialViewerModal.tsx'
 import CapturePage from './pages/CapturePage.tsx'
 import PriorsPage from './pages/PriorsPage.tsx'
 import SettingsPage from './pages/SettingsPage.tsx'
-import OsmosisPage from './pages/OsmosisPage.tsx'
 
 export default function App() {
   const [configured, setConfigured] = useState<boolean | null>(null)
   const [materials, setMaterials] = useState<{ id: string; title: string; isActive: boolean }[]>([])
   const [sessions] = useState<{ id: string; title: string; date: string }[]>([])
+  const [viewingMaterialId, setViewingMaterialId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/setup/status')
@@ -96,16 +97,23 @@ export default function App() {
           sessions={sessions}
           onToggleMaterial={toggleMaterial}
           onDeleteMaterial={deleteMaterial}
+          onViewMaterial={(id) => setViewingMaterialId(id)}
         />
         <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={<Navigate to="/capture" />} />
             <Route path="/capture" element={<CapturePage />} />
             <Route path="/priors" element={<PriorsPage />} />
-            <Route path="/osmosis" element={<OsmosisPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </main>
+
+        {viewingMaterialId && (
+          <MaterialViewerModal
+            materialId={viewingMaterialId}
+            onClose={() => setViewingMaterialId(null)}
+          />
+        )}
       </div>
     </ThemeProvider>
   )

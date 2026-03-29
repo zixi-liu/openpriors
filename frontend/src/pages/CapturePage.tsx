@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PriorCard from '../components/PriorCard.tsx'
+import ChatPanel from '../components/ChatPanel.tsx'
 
 interface Prior {
   name: string
@@ -334,6 +335,9 @@ export default function CapturePage() {
             </div>
           </div>
         )}
+
+        {/* Chat Panel — agent conversation */}
+        <ChatPanel />
       </div>
 
       {/* Link Modal */}
