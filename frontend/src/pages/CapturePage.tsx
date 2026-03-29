@@ -1,8 +1,5 @@
-import { useState, useRef } from 'react'
-import { FileText, Link2, Mic, MicOff, Upload, Loader2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import PriorCard from '../components/PriorCard.tsx'
-
-type Tab = 'text' | 'url' | 'voice'
 
 interface Prior {
   name: string
@@ -19,42 +16,66 @@ interface CaptureResult {
 }
 
 export default function CapturePage() {
-  const [tab, setTab] = useState<Tab>('text')
-  const [textInput, setTextInput] = useState('')
-  const [urlInput, setUrlInput] = useState('')
-  const [sourceHint, setSourceHint] = useState('')
+  const [titleValue, setTitleValue] = useState('')
+  const titleRef = useRef<HTMLHeadingElement>(null)
+
+  // Upload dropdown
+  const [isUploadDropdownOpen, setIsUploadDropdownOpen] = useState(false)
+  const uploadDropdownRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Link modal
+  const [linkModalOpen, setLinkModalOpen] = useState(false)
+  const [linkInput, setLinkInput] = useState('')
+  const linkInputRef = useRef<HTMLInputElement>(null)
+
+  // Voice recording
+  const [recording, setRecording] = useState(false)
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+
+  // Osmosis session modal
+  const [osmosisModalOpen, setOsmosisModalOpen] = useState(false)
+
+  // State
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CaptureResult | null>(null)
   const [error, setError] = useState('')
 
-  // Voice state
-  const [recording, setRecording] = useState(false)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
+  // Close upload dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (uploadDropdownRef.current && !uploadDropdownRef.current.contains(e.target as Node)) {
+        setIsUploadDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
-  const tabs = [
-    { id: 'text' as Tab, label: 'Text', icon: FileText },
-    { id: 'url' as Tab, label: 'URL', icon: Link2 },
-    { id: 'voice' as Tab, label: 'Voice', icon: Mic },
-  ]
+  // Focus link input when modal opens
+  useEffect(() => {
+    if (linkModalOpen) setTimeout(() => linkInputRef.current?.focus(), 100)
+  }, [linkModalOpen])
 
-  const captureText = async () => {
-    if (!textInput.trim()) return
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
     setLoading(true)
     setError('')
     setResult(null)
 
     try {
+      const text = await file.text()
       const res = await fetch('/api/priors/capture/text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: textInput, source: sourceHint || undefined }),
+        body: JSON.stringify({ content: text, source: file.name }),
       })
       const data = await res.json()
       if (data.success) {
         setResult({ title: data.title, summary: data.summary, priors: data.priors })
-        setTextInput('')
-        setSourceHint('')
       } else {
         setError(data.error || 'Failed to extract priors')
       }
@@ -62,11 +83,13 @@ export default function CapturePage() {
       setError('Could not connect to server')
     } finally {
       setLoading(false)
+      e.target.value = ''
     }
   }
 
-  const captureUrl = async () => {
-    if (!urlInput.trim()) return
+  const handleLinkSubmit = async () => {
+    if (!linkInput.trim()) return
+    setLinkModalOpen(false)
     setLoading(true)
     setError('')
     setResult(null)
@@ -75,12 +98,11 @@ export default function CapturePage() {
       const res = await fetch('/api/priors/capture/url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlInput }),
+        body: JSON.stringify({ url: linkInput }),
       })
       const data = await res.json()
       if (data.success) {
         setResult({ title: data.title, summary: data.summary, priors: data.priors })
-        setUrlInput('')
       } else {
         setError(data.error || 'Failed to extract priors')
       }
@@ -88,6 +110,7 @@ export default function CapturePage() {
       setError('Could not connect to server')
     } finally {
       setLoading(false)
+      setLinkInput('')
     }
   }
 
@@ -118,6 +141,7 @@ export default function CapturePage() {
   const stopRecording = () => {
     mediaRecorderRef.current?.stop()
     setRecording(false)
+    setVoiceModalOpen(false)
   }
 
   const uploadAudio = async (blob: Blob) => {
@@ -128,7 +152,6 @@ export default function CapturePage() {
     try {
       const formData = new FormData()
       formData.append('audio', blob, 'recording.wav')
-      if (sourceHint) formData.append('source', sourceHint)
 
       const res = await fetch('/api/voice/capture/audio', {
         method: 'POST',
@@ -148,162 +171,249 @@ export default function CapturePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
-      {/* Header */}
-      <div className="mb-8">
-        <h2 className="font-serif text-2xl font-semibold text-gray-900">
-          Capture a Prior
-        </h2>
-        <p className="text-gray-500 text-sm mt-1">
-          Share what you recently learned. We'll extract actionable principles you can practice.
-        </p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-[#F0EDE7] rounded-lg p-1 w-fit">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm transition-colors ${
-              tab === id
-                ? 'bg-white text-gray-900 font-medium shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+    <div className="flex-1 overflow-y-auto scrollbar-hide">
+      <div className="max-w-4xl mx-auto w-full px-6 pt-8 pb-8 space-y-8">
+        {/* Title */}
+        <div className="pt-10">
+          <h1
+            ref={titleRef}
+            contentEditable
+            suppressContentEditableWarning
+            spellCheck={false}
+            onBlur={() => setTitleValue(titleRef.current?.textContent || '')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                titleRef.current?.blur()
+              }
+            }}
+            className="text-4xl font-bold outline-none cursor-text p-0 m-0"
+            style={{
+              color: 'var(--op-font-color)',
+            }}
           >
-            <Icon size={14} />
-            {label}
+            {titleValue || ''}
+          </h1>
+          {!titleValue && (
+            <span
+              className="text-4xl font-bold pointer-events-none select-none absolute"
+              style={{ color: 'var(--op-font-color)', opacity: 0.2, marginTop: '-2.5rem' }}
+            >
+              Untitled
+            </span>
+          )}
+        </div>
+
+        {/* Action buttons row */}
+        <div className="ml-1 flex items-center gap-3 flex-wrap">
+          {/* Upload Material dropdown */}
+          <div className="relative" ref={uploadDropdownRef}>
+            <button
+              onClick={() => setIsUploadDropdownOpen(!isUploadDropdownOpen)}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2.5 border border-[#E3E2E0] rounded-lg text-sm hover:bg-[#F7F7F5] transition-colors disabled:opacity-50 min-w-[170px]"
+              style={{ color: 'var(--op-font-color)' }}
+            >
+              {loading ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 10V3m0 0L5 6m3-3l3 3M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              {loading ? 'Analyzing...' : 'Upload Material'}
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform ${isUploadDropdownOpen ? 'rotate-180' : ''}`}>
+                <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {isUploadDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[#E3E2E0] rounded-lg shadow-lg py-1 z-50">
+                <button
+                  onClick={() => {
+                    fileInputRef.current?.click()
+                    setIsUploadDropdownOpen(false)
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[#F7F7F5] transition-colors"
+                  style={{ color: 'var(--op-font-color)' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 1h5l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                    <path d="M9 1v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Upload PDF
+                </button>
+                <button
+                  onClick={() => {
+                    setLinkModalOpen(true)
+                    setIsUploadDropdownOpen(false)
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[#F7F7F5] transition-colors"
+                  style={{ color: 'var(--op-font-color)' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6.5 9.5l3-3M7 11l-1.6 1.6a2.12 2.12 0 01-3-3L4 8m5-3l1.6-1.6a2.12 2.12 0 013 3L12 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Paste Website Link
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Share What You Learned (voice) */}
+          <button
+            onClick={() => { setVoiceModalOpen(true); startRecording() }}
+            className="flex items-center gap-2 px-4 py-2.5 border border-[#E3E2E0] rounded-lg text-sm hover:bg-[#F7F7F5] transition-colors"
+            style={{ color: 'var(--op-font-color)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 2.5a3.5 3.5 0 013.5 3.5v2a3.5 3.5 0 11-7 0V6A3.5 3.5 0 018 2.5z" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M5 11.5A4.5 4.5 0 008 13a4.5 4.5 0 003-1.5M8 13v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            Share What You Learned
           </button>
-        ))}
-      </div>
 
-      {/* Input area */}
-      <div className="bg-white rounded-xl border border-[#E8DFD0] p-5 mb-6">
-        {tab === 'text' && (
-          <div className="space-y-3">
-            <textarea
-              value={textInput}
-              onChange={e => setTextInput(e.target.value)}
-              placeholder="Paste your notes, book highlights, key takeaways, or just describe what you learned..."
-              rows={8}
-              className="w-full resize-none text-sm leading-relaxed bg-transparent focus:outline-none placeholder:text-gray-300"
-            />
-            <input
-              type="text"
-              value={sourceHint}
-              onChange={e => setSourceHint(e.target.value)}
-              placeholder="Source (optional) — e.g., 'Atomic Habits by James Clear'"
-              className="w-full text-sm px-3 py-2 rounded-lg border border-[#E8DFD0] bg-[#FDFBF7] focus:outline-none focus:border-gray-400 placeholder:text-gray-300"
-            />
-            <button
-              onClick={captureText}
-              disabled={loading || !textInput.trim()}
-              className="px-5 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-40 transition-colors flex items-center gap-2"
-            >
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-              Extract Priors
-            </button>
+          {/* Osmosis Session */}
+          <button
+            onClick={() => setOsmosisModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 border border-[#E3E2E0] rounded-lg text-sm hover:bg-[#F7F7F5] transition-colors"
+            style={{ color: 'var(--op-font-color)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M13 9l-1.5 1.5L13 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Osmosis Session
+          </button>
+        </div>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.txt,.md"
+          className="hidden"
+          onChange={handleFileUpload}
+        />
+
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center gap-2 py-4 ml-1">
+            <div className="w-4 h-4 border-2 border-[#6B4F3A]/20 border-t-[#6B4F3A] rounded-full animate-spin" />
+            <span className="text-sm" style={{ color: 'var(--op-font-color)', opacity: 0.4 }}>Extracting priors from your material...</span>
           </div>
         )}
 
-        {tab === 'url' && (
-          <div className="space-y-3">
-            <input
-              type="url"
-              value={urlInput}
-              onChange={e => setUrlInput(e.target.value)}
-              placeholder="Paste a URL — article, blog post, YouTube video..."
-              onKeyDown={e => e.key === 'Enter' && captureUrl()}
-              className="w-full text-sm px-3 py-2.5 rounded-lg border border-[#E8DFD0] bg-[#FDFBF7] focus:outline-none focus:border-gray-400 placeholder:text-gray-300"
-            />
-            <button
-              onClick={captureUrl}
-              disabled={loading || !urlInput.trim()}
-              className="px-5 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-40 transition-colors flex items-center gap-2"
-            >
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />}
-              Extract from URL
-            </button>
+        {/* Error */}
+        {error && (
+          <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm ml-1">
+            {error}
           </div>
         )}
 
-        {tab === 'voice' && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500">
-              Hit record and talk about what you just learned. Ramble freely — we'll extract the key insights.
-            </p>
-            <input
-              type="text"
-              value={sourceHint}
-              onChange={e => setSourceHint(e.target.value)}
-              placeholder="What were you learning from? (optional)"
-              className="w-full text-sm px-3 py-2 rounded-lg border border-[#E8DFD0] bg-[#FDFBF7] focus:outline-none focus:border-gray-400 placeholder:text-gray-300"
-            />
-            <div className="flex items-center gap-4">
-              <button
-                onClick={recording ? stopRecording : startRecording}
-                disabled={loading}
-                className={`relative w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-                  recording
-                    ? 'bg-red-500 text-white'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                }`}
-              >
-                {recording && (
-                  <span className="absolute inset-0 rounded-full bg-red-500 animate-pulse-ring" />
-                )}
-                {recording ? <MicOff size={20} /> : <Mic size={20} />}
-              </button>
-              <span className="text-sm text-gray-400">
-                {recording ? 'Recording... tap to stop' : loading ? 'Processing...' : 'Tap to start recording'}
-              </span>
+        {/* Results */}
+        {result && (
+          <div className="animate-fade-in space-y-6 ml-1">
+            <div>
+              <h2 className="text-sm font-bold tracking-wider" style={{ color: 'var(--op-font-color)', opacity: 0.7 }}>Extracted Priors</h2>
+              <p className="text-sm mt-1" style={{ color: 'var(--op-font-color)', opacity: 0.5 }}>{result.summary}</p>
+            </div>
+            <div className="space-y-3">
+              {result.priors.map((prior, i) => (
+                <PriorCard key={i} prior={prior} />
+              ))}
             </div>
           </div>
         )}
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-6 p-3 rounded-lg bg-red-50 text-red-600 text-sm">
-          {error}
+      {/* Link Modal */}
+      {linkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setLinkModalOpen(false)} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--op-font-color)' }}>Paste Website Link</h3>
+            <input
+              ref={linkInputRef}
+              type="url"
+              value={linkInput}
+              onChange={e => setLinkInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLinkSubmit()}
+              placeholder="https://..."
+              className="w-full text-sm px-3 py-2.5 rounded-lg border border-[#E3E2E0] focus:outline-none focus:border-gray-400 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setLinkModalOpen(false)}
+                className="px-4 py-2 text-sm rounded-lg hover:bg-[#F7F7F5] transition-colors"
+                style={{ color: 'var(--op-font-color)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLinkSubmit}
+                disabled={!linkInput.trim()}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-40 transition-colors"
+              >
+                Extract
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center gap-3 mb-6 text-gray-400 text-sm">
-          <Loader2 size={16} className="animate-spin" />
-          Extracting priors from your input...
+      {/* Voice Recording Modal */}
+      {voiceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => { if (!recording) setVoiceModalOpen(false) }} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-8 text-center">
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--op-font-color)' }}>Share What You Learned</h3>
+            <p className="text-sm mb-8" style={{ color: 'var(--op-font-color)', opacity: 0.5 }}>
+              Talk about what you just learned — a book, podcast, conversation, or idea. Ramble freely.
+            </p>
+            <div className="flex justify-center mb-6">
+              <button
+                onClick={recording ? stopRecording : startRecording}
+                className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-colors ${
+                  recording ? 'bg-red-500 text-white' : 'bg-gray-900 text-white hover:bg-gray-800'
+                }`}
+              >
+                {recording && (
+                  <span className="absolute inset-0 rounded-full bg-red-500 animate-pulse-ring" />
+                )}
+                <svg width="28" height="28" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 2.5a3.5 3.5 0 013.5 3.5v2a3.5 3.5 0 11-7 0V6A3.5 3.5 0 018 2.5z" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M5 11.5A4.5 4.5 0 008 13a4.5 4.5 0 003-1.5M8 13v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--op-font-color)', opacity: 0.4 }}>
+              {recording ? 'Listening... tap to stop' : 'Tap to start'}
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Results */}
-      {result && (
-        <div className="animate-fade-in">
-          <div className="mb-4">
-            <h3 className="font-serif text-lg font-semibold text-gray-900">
-              {result.title}
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">{result.summary}</p>
+      {/* Osmosis Session Modal (placeholder) */}
+      {osmosisModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOsmosisModalOpen(false)} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-8 text-center">
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--op-font-color)' }}>Osmosis Session</h3>
+            <p className="text-sm mb-6" style={{ color: 'var(--op-font-color)', opacity: 0.5 }}>
+              AI will help you connect your learning materials with your daily life and goals. Coming soon.
+            </p>
+            <button
+              onClick={() => setOsmosisModalOpen(false)}
+              className="px-4 py-2 text-sm rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+            >
+              Close
+            </button>
           </div>
-          <div className="space-y-3">
-            {result.priors.map((prior, i) => (
-              <PriorCard key={i} prior={prior} />
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-4">
-            {result.priors.length} priors saved to ~/.openpriors/priors/
-          </p>
         </div>
       )}
     </div>
-  )
-}
-
-function Sparkles({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-    </svg>
   )
 }

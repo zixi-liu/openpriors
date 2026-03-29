@@ -10,12 +10,18 @@ html, body, #root {
   padding: 0;
 }
 
+:root {
+  --op-bg: #FDFBF7;
+  --op-font-color: #1a1a1a;
+  --op-font-family: 'Inter', sans-serif;
+}
+
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--op-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #FDFBF7;
-  color: #1a1a1a;
+  background: var(--op-bg);
+  color: var(--op-font-color);
 }
 
 /* Custom scrollbar */
