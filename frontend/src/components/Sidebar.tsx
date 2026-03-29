@@ -105,7 +105,7 @@ export default function Sidebar({
 
       {/* My Assets */}
       {!isCollapsed && (
-        <div className="px-2 pb-2 mt-3">
+        <div className="px-2 pb-2 mt-3" style={{ minHeight: '6rem' }}>
           <div className="px-1 mb-1">
             <span className="text-base font-bold tracking-wider" style={{ opacity: 0.7 }}>My Assets</span>
           </div>
