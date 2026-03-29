@@ -243,7 +243,8 @@ export default function ChatProvider({ children, existingSessionId, onSessionRea
     if (!userMsg || loading || !sessionId) return
     setInput('')
 
-    const newMessages: Message[] = [...messages, { role: 'user', content: userMsg }]
+    const displayMsg = userMsg.split('[type:')[0].trim()
+    const newMessages: Message[] = [...messages, { role: 'user', content: displayMsg }]
     setMessages(newMessages)
     setLoading(true)
 
