@@ -259,9 +259,12 @@ export default function Sidebar({
         >
           <button
             onClick={() => { navigator.clipboard.writeText(menuOpen); setMenuOpen(null) }}
-            className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F5]"
+            className="w-full flex items-center gap-2 text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F5]"
             style={{ color: 'var(--op-font-color)' }}
-          >Share</button>
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            Share
+          </button>
           <button
             onClick={() => {
               const isMaterial = materials.some(m => m.id === menuOpen)
@@ -269,8 +272,12 @@ export default function Sidebar({
               else onDeleteSession?.(menuOpen)
               setMenuOpen(null)
             }}
-            className="w-full text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F5] text-red-500"
-          >Move to trash</button>
+            className="w-full flex items-center gap-2 text-left px-3 py-1.5 text-xs hover:bg-[#F7F7F5]"
+            style={{ color: 'var(--op-font-color)' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            Move to trash
+          </button>
         </div>
       )}
     </aside>
