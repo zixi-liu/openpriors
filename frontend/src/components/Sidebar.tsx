@@ -166,7 +166,7 @@ export default function Sidebar({
       <div className="px-2 pb-2">
         <button
           onClick={() => { onNewPage?.(); navigate('/capture') }}
-          className="flex items-center gap-1.5 rounded text-sm hover:bg-[#00000008] transition-colors w-full px-2 py-1.5"
+          className="flex items-center justify-center rounded-lg border border-[#E3E2E0] hover:bg-[#00000008] transition-colors w-8 h-8"
           style={{ color: 'var(--op-font-color)', opacity: 0.7 }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
