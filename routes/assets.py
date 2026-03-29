@@ -16,8 +16,25 @@ from typing import Optional, List
 from core.llm import complete, complete_json, parse_json
 from core.extractor import extract_priors, extract_from_url
 from core.storage import save_priors, save_material, get_material, get_all_materials, delete_material, get_all_priors, search_priors, get_prior
+from core.embeddings import index_material, index_prior, hybrid_search
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
+
+
+async def _embed_material_and_priors(material_id: str, content: str, priors: list, title: str):
+    """Background: embed material chunks + individual priors."""
+    try:
+        await index_material(material_id, content)
+        for prior in priors:
+            await index_prior(
+                prior_id=prior.get("name", ""),
+                material_id=material_id,
+                principle=prior.get("principle", ""),
+                practice=prior.get("practice", ""),
+                source=prior.get("source", title),
+            )
+    except Exception as e:
+        print(f"Embedding failed (non-blocking): {e}")
 
 
 # ============================================================
@@ -46,6 +63,7 @@ async def upload_text(request: UploadTextRequest):
         )
         priors = result.get("priors", [])
         ids = save_priors(priors, source_title=title, material_id=material_id)
+        await _embed_material_and_priors(material_id, request.content, priors, title)
         return JSONResponse({
             "success": True,
             "title": title,
@@ -95,6 +113,7 @@ async def upload_url(request: UploadURLRequest):
         )
         priors = result.get("priors", [])
         ids = save_priors(priors, source_title=title, material_id=material_id)
+        await _embed_material_and_priors(material_id, stored_content, priors, title)
         return JSONResponse({
             "success": True,
             "title": title,
@@ -123,6 +142,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         )
         priors = result.get("priors", [])
         ids = save_priors(priors, source_title=title, material_id=material_id)
+        await _embed_material_and_priors(material_id, text, priors, title)
         return JSONResponse({
             "success": True,
             "title": title,
@@ -262,6 +282,7 @@ async def voice_generate(req: GenerateRequest):
         result = await extract_priors(reflection, source_hint=source_hint)
         priors = result.get("priors", [])
         ids = save_priors(priors, source_title=title, material_id=material_id)
+        await _embed_material_and_priors(material_id, reflection, priors, title)
 
         return JSONResponse({
             "success": True,
@@ -339,3 +360,30 @@ class SearchRequest(BaseModel):
 async def search_assets(request: SearchRequest):
     results = search_priors(request.query, request.limit)
     return JSONResponse({"success": True, "results": results, "count": len(results)})
+
+
+class SemanticSearchRequest(BaseModel):
+    query: str
+    max_results: int = 6
+
+
+@router.post("/search/semantic")
+async def semantic_search(request: SemanticSearchRequest):
+    """Hybrid BM25 + vector search across all materials and priors."""
+    try:
+        results = await hybrid_search(request.query, max_results=request.max_results)
+        return JSONResponse({
+            "success": True,
+            "results": [
+                {
+                    "chunk_id": r.chunk_id,
+                    "material_id": r.material_id,
+                    "text": r.text,
+                    "score": round(r.score, 4),
+                }
+                for r in results
+            ],
+            "count": len(results),
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
