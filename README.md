@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/zixi-liu/openpriors/main/assets/openpriors-logo.png" alt="OpenPriors" width="60" />
+  <img src="https://raw.githubusercontent.com/zixi-liu/OpenPriors/main/assets/openpriors-logo.png" alt="OpenPriors" width="60" />
 </p>
 
 <h1 align="center">OpenPriors</h1>
@@ -64,7 +64,7 @@ OpenPriors closes the gap between **knowing** and **doing**.
 
 ```bash
 # Clone
-git clone https://github.com/zixi-liu/openpriors.git
+git clone https://github.com/zixi-liu/OpenPriors.git
 cd openpriors
 
 # Setup — pick your LLM provider and paste your API key
