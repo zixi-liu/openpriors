@@ -38,7 +38,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "search_knowledge",
-            "description": "Semantic search across all the user's learning materials and extracted priors. Use this to find relevant knowledge based on a topic or question.",
+            "description": "Semantic search across all the user's learning materials and extracted insights. Use this to find relevant knowledge based on a topic or question.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -72,7 +72,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "get_all_priors",
-            "description": "Get all extracted priors (actionable principles) from the user's learning materials.",
+            "description": "Get all extracted learnings (actionable principles) from the user's learning materials.",
             "parameters": {"type": "object", "properties": {}, "required": []},
         },
     },
@@ -107,7 +107,7 @@ TOOLS = [
 
 SYSTEM_PROMPT = """You are an Osmosis Coach — you help people integrate what they've learned into their daily life.
 
-You have access to the user's learning materials (books, articles, podcasts, reflections) and extracted priors (actionable principles).
+You have access to the user's learning materials (books, articles, podcasts, reflections) and extracted learnings (actionable principles).
 
 Your approach:
 1. FIRST: Greet the user warmly. If they have materials, mention the most recent one by name — use the EXACT title from list_materials. If they have NO materials, say hi and suggest they use the "Add something new" button to upload a source (book, article, YouTube video) or the "Talk about a learning" button to voice-capture what they've been learning. NEVER make up or guess material names. DO NOT propose options yet — just have a conversation.
@@ -121,7 +121,7 @@ Options you might propose (not limited to these):
 - Write a guided reflection connecting this knowledge to a specific life situation
 - Create a weekly practice plan with daily micro-exercises
 - Roleplay a scenario where they apply these principles
-- Design an integration plan that weaves multiple priors together
+- Design an integration plan that weaves multiple learnings together
 - Build a personal framework combining insights from different sources
 
 Be warm, curious, and specific. Reference actual content from their materials — don't be generic.
@@ -164,11 +164,11 @@ async def execute_tool(name: str, arguments: dict) -> str:
     elif name == "get_all_priors":
         priors = get_all_priors()
         if not priors:
-            return "No priors extracted yet."
+            return "No learnings extracted yet."
         items = []
         for p in priors:
             items.append(f"- {p['name']}: {p['principle']} (Practice: {p['practice']})")
-        return f"{len(priors)} priors:\n" + "\n".join(items)
+        return f"{len(priors)} learnings:\n" + "\n".join(items)
 
     elif name == "propose_options":
         # This is a terminal tool — the options get returned to the frontend

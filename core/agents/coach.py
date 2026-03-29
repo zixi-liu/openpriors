@@ -1,7 +1,7 @@
 """
 Coach Agent (stub)
 
-Roleplay practice where the AI plays a scenario and the user practices applying their priors.
+Roleplay practice where the AI plays a scenario and the user practices applying their learnings.
 Uses voice recording (Talk about a learning flow).
 """
 

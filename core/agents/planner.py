@@ -1,7 +1,7 @@
 """
 Planner Agent
 
-Creates a practice plan with daily/weekly goals linked to priors.
+Creates a practice plan with daily/weekly goals linked to learnings.
 Saves goals to the database with cadence and check-in schedules.
 """
 
@@ -16,12 +16,12 @@ SYSTEM_PROMPT = """You are a practice plan designer helping someone integrate le
 Context about what they want to practice:
 {context}
 
-Their extracted priors (actionable principles):
+Their key learnings (actionable principles):
 {priors}
 
 Your approach:
 1. First, ask the user about their current routine and what cadence works for them (daily, every 2 days, weekly).
-2. Based on their priors and preferences, design a concrete practice plan.
+2. Based on their learnings and preferences, design a concrete practice plan.
 3. When ready, output the plan as JSON by starting your message with [PLAN] followed by a JSON array:
 
 [PLAN]
@@ -57,7 +57,7 @@ async def run_planner_turn(
     priors_text = "\n".join([
         f"- {p['name']}: {p['principle']} (Practice: {p['practice']})"
         for p in priors[:10]
-    ]) if priors else "No priors extracted yet."
+    ]) if priors else "No learnings extracted yet."
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT.format(context=context, priors=priors_text)},
