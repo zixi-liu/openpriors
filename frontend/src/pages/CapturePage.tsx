@@ -318,12 +318,6 @@ export default function CapturePage({ sessionId }: { sessionId?: string | null }
 
         <input ref={fileInputRef} type="file" accept=".pdf,.txt,.md" className="hidden" onChange={handleFileUpload} />
 
-        {isAnalyzing && (
-          <div className="flex items-center gap-2 py-4 ml-1">
-            <div className="w-4 h-4 border-2 border-[#6B4F3A]/20 border-t-[#6B4F3A] rounded-full animate-spin" />
-            <span className="text-sm" style={{ color: 'var(--op-font-color)', opacity: 0.4 }}>Extracting priors from your material...</span>
-          </div>
-        )}
 
         {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm ml-1">{error}</div>}
 
