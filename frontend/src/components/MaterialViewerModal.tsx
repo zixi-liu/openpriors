@@ -2,6 +2,26 @@ import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
+function formatContent(content: string): string {
+  // If already has markdown formatting (line breaks, bullets), return as is
+  if (content.includes('\n\n') || content.includes('\n- ') || content.includes('\n#')) {
+    return content
+  }
+  // Raw text blob — split into paragraphs every 2-3 sentences
+  const sentences = content.split(/(?<=[.!?])\s+/)
+  const paragraphs: string[] = []
+  let current: string[] = []
+  for (const s of sentences) {
+    current.push(s)
+    if (current.length >= 3) {
+      paragraphs.push(current.join(' '))
+      current = []
+    }
+  }
+  if (current.length > 0) paragraphs.push(current.join(' '))
+  return paragraphs.join('\n\n')
+}
+
 interface MaterialViewerModalProps {
   materialId: string
   onClose: () => void
@@ -98,7 +118,7 @@ export default function MaterialViewerModal({ materialId, onClose }: MaterialVie
                   h1: ({ children }) => <h1 className="text-xl font-bold mb-3 pb-2 border-b border-[#E3E2E0]">{children}</h1>,
                   h2: ({ children }) => <h2 className="text-base font-semibold mt-5 mb-2">{children}</h2>,
                   h3: ({ children }) => <h3 className="text-sm font-semibold mt-3 mb-1">{children}</h3>,
-                  p: ({ children }) => <p className="text-sm my-1.5 leading-relaxed" style={{ opacity: 0.8 }}>{children}</p>,
+                  p: ({ children }) => <p className="text-sm my-2.5 leading-relaxed" style={{ opacity: 0.8 }}>{children}</p>,
                   ul: ({ children }) => <ul className="list-disc list-outside ml-5 my-2 space-y-1">{children}</ul>,
                   ol: ({ children }) => <ol className="list-decimal list-outside ml-5 my-2 space-y-1">{children}</ol>,
                   li: ({ children }) => <li className="text-sm leading-relaxed" style={{ opacity: 0.8 }}>{children}</li>,
@@ -107,7 +127,7 @@ export default function MaterialViewerModal({ materialId, onClose }: MaterialVie
                   a: ({ href, children }) => <a href={href} className="underline" target="_blank" rel="noopener noreferrer">{children}</a>,
                 }}
               >
-                {material.content}
+                {formatContent(material.content)}
               </ReactMarkdown>
             </div>
           ) : (
