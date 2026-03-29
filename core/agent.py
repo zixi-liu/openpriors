@@ -219,7 +219,6 @@ async def run_agent_turn(
             model="o3-mini",
             messages=messages,
             tools=TOOLS,
-            temperature=0.7,
         )
 
         choice = response.choices[0]
