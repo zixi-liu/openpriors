@@ -1,0 +1,151 @@
+"""
+Prior Storage
+
+Stores priors as human-readable .md files and indexes them in SQLite.
+Local-first: no cloud DB required.
+"""
+
+import json
+import sqlite3
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import List, Optional, Dict, Any
+
+from core.config import get_priors_dir, get_db_path
+
+
+def _get_db() -> sqlite3.Connection:
+    db_path = get_db_path()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS priors (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            principle TEXT NOT NULL,
+            practice TEXT NOT NULL,
+            trigger_context TEXT,
+            source TEXT,
+            source_title TEXT,
+            file_path TEXT,
+            created_at TEXT NOT NULL,
+            last_practiced TEXT,
+            practice_count INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active'
+        )
+    """)
+    conn.execute("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS priors_fts
+        USING fts5(name, principle, practice, source, content=priors, content_rowid=rowid)
+    """)
+    conn.commit()
+    return conn
+
+
+def save_prior(prior: Dict[str, Any], source_title: str = "") -> str:
+    """Save a single prior as .md file and index in SQLite."""
+    prior_id = str(uuid.uuid4())[:8]
+    now = datetime.now()
+    date_str = now.strftime("%Y-%m-%d")
+
+    # Write .md file
+    slug = prior["name"].lower().replace(" ", "-")[:30]
+    filename = f"{date_str}-{slug}.md"
+    priors_dir = get_priors_dir()
+    priors_dir.mkdir(parents=True, exist_ok=True)
+    filepath = priors_dir / filename
+
+    md_content = f"""---
+id: {prior_id}
+name: {prior["name"]}
+source: {prior.get("source", "")}
+created: {now.isoformat()}
+---
+
+## {prior["name"]}
+
+**Principle:** {prior["principle"]}
+
+**Practice:** {prior["practice"]}
+
+**When to apply:** {prior.get("trigger", "anytime")}
+
+**Source:** {prior.get("source", "unknown")}
+"""
+    filepath.write_text(md_content)
+
+    # Index in SQLite
+    conn = _get_db()
+    conn.execute(
+        """INSERT INTO priors (id, name, principle, practice, trigger_context, source, source_title, file_path, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            prior_id,
+            prior["name"],
+            prior["principle"],
+            prior["practice"],
+            prior.get("trigger", ""),
+            prior.get("source", ""),
+            source_title,
+            str(filepath),
+            now.isoformat(),
+        ),
+    )
+    # Update FTS index
+    conn.execute(
+        "INSERT INTO priors_fts (rowid, name, principle, practice, source) VALUES (last_insert_rowid(), ?, ?, ?, ?)",
+        (prior["name"], prior["principle"], prior["practice"], prior.get("source", "")),
+    )
+    conn.commit()
+    conn.close()
+    return prior_id
+
+
+def save_priors(priors: List[Dict[str, Any]], source_title: str = "") -> List[str]:
+    """Save multiple priors. Returns list of IDs."""
+    return [save_prior(p, source_title) for p in priors]
+
+
+def get_all_priors(status: str = "active") -> List[Dict[str, Any]]:
+    """Get all priors."""
+    conn = _get_db()
+    rows = conn.execute(
+        "SELECT * FROM priors WHERE status = ? ORDER BY created_at DESC", (status,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def search_priors(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Full-text search across priors."""
+    conn = _get_db()
+    rows = conn.execute(
+        """SELECT p.* FROM priors p
+           JOIN priors_fts fts ON p.rowid = fts.rowid
+           WHERE priors_fts MATCH ? AND p.status = 'active'
+           ORDER BY rank LIMIT ?""",
+        (query, limit),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_prior(prior_id: str) -> Optional[Dict[str, Any]]:
+    conn = _get_db()
+    row = conn.execute("SELECT * FROM priors WHERE id = ?", (prior_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def record_practice(prior_id: str):
+    """Record that a prior was practiced."""
+    conn = _get_db()
+    conn.execute(
+        """UPDATE priors SET practice_count = practice_count + 1,
+           last_practiced = ? WHERE id = ?""",
+        (datetime.now().isoformat(), prior_id),
+    )
+    conn.commit()
+    conn.close()
