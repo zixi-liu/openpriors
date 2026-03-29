@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/zixi-liu/openpriors/main/assets/openpriors-logo.png" alt="OpenPriors" width="36" valign="middle" />
+  <img src="https://raw.githubusercontent.com/zixi-liu/openpriors/main/assets/openpriors-logo.png" alt="OpenPriors" width="42" style="vertical-align: text-top; margin-right: 4px;" />
   OpenPriors
 </h1>
 
