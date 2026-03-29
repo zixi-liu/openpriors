@@ -16,7 +16,7 @@ from core.agent import run_agent_turn
 from core.storage import (
     create_session, get_session, get_all_sessions, update_session_title,
     delete_session, add_session_message, get_session_messages,
-    get_priors_by_session,
+    get_priors_by_session, update_goal_due_date,
 )
 
 router = APIRouter(prefix="/api/osmosis", tags=["osmosis"])
@@ -119,8 +119,26 @@ async def osmosis_chat(request: ChatRequest):
         }
         if result.options:
             response["options"] = result.options
+        if result.artifacts:
+            response["artifacts"] = result.artifacts
 
         return JSONResponse(response)
 
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+# ============================================================
+# Goals
+# ============================================================
+
+class UpdateGoalRequest(BaseModel):
+    due_date: str
+
+
+@router.patch("/goals/{goal_id}")
+async def update_goal(goal_id: str, request: UpdateGoalRequest):
+    updated = update_goal_due_date(goal_id, request.due_date)
+    if not updated:
+        return JSONResponse({"success": False, "error": "Goal not found"}, status_code=404)
+    return JSONResponse({"success": True})

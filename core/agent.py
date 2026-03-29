@@ -188,7 +188,8 @@ class AgentMessage:
     tool_calls: Optional[List[dict]] = None
     tool_call_id: Optional[str] = None
     name: Optional[str] = None
-    options: Optional[List[dict]] = None  # populated when propose_options is called
+    options: Optional[List[dict]] = None
+    artifacts: Optional[Dict[str, Any]] = None  # plan goals, reflections, etc.
 
 
 AGENT_TYPE_MAP = {
@@ -276,9 +277,8 @@ async def run_agent_turn(
         if result:
             content = result.content
             if not result.done:
-                # Mark the active agent so we keep routing to it
                 content += f"\n\n[ACTIVE_AGENT:{sub_agent}]"
-            return AgentMessage(role="assistant", content=content)
+            return AgentMessage(role="assistant", content=content, artifacts=result.artifacts)
 
     # Default: run the explore/router agent
     from openai import AsyncOpenAI

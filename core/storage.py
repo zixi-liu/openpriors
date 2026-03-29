@@ -8,7 +8,7 @@ Local-first: no cloud DB required.
 import json
 import sqlite3
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
@@ -54,6 +54,33 @@ def _get_db() -> sqlite3.Connection:
     conn.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS priors_fts
         USING fts5(name, principle, practice, source, content=priors, content_rowid=rowid)
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS goals (
+            id TEXT PRIMARY KEY,
+            prior_id TEXT,
+            description TEXT NOT NULL,
+            cadence TEXT NOT NULL DEFAULT 'daily',
+            next_check_in TEXT,
+            last_check_in TEXT,
+            streak INTEGER DEFAULT 0,
+            total_check_ins INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            slack_channel TEXT,
+            due_date TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (prior_id) REFERENCES priors(id)
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS check_ins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            goal_id TEXT NOT NULL,
+            response TEXT,
+            practiced INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (goal_id) REFERENCES goals(id)
+        )
     """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
@@ -334,3 +361,103 @@ def get_session_messages(session_id: str) -> List[Dict[str, Any]]:
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+# ============================================================
+# Goals
+# ============================================================
+
+CADENCE_HOURS = {
+    "daily": 24,
+    "every_2_days": 48,
+    "weekly": 168,
+}
+
+
+def create_goal(
+    description: str,
+    prior_id: str = "",
+    cadence: str = "daily",
+    slack_channel: str = "",
+) -> str:
+    goal_id = str(uuid.uuid4())[:8]
+    now = datetime.now()
+    next_check = (now + timedelta(hours=CADENCE_HOURS.get(cadence, 24))).isoformat()
+    conn = _get_db()
+    conn.execute(
+        """INSERT INTO goals (id, prior_id, description, cadence, next_check_in, status, slack_channel, created_at)
+           VALUES (?, ?, ?, ?, ?, 'active', ?, ?)""",
+        (goal_id, prior_id, description, cadence, next_check, slack_channel, now.isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    return goal_id
+
+
+def get_active_goals() -> List[Dict[str, Any]]:
+    conn = _get_db()
+    rows = conn.execute(
+        "SELECT * FROM goals WHERE status = 'active' ORDER BY created_at DESC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_due_goals() -> List[Dict[str, Any]]:
+    """Get goals where next_check_in is in the past."""
+    now = datetime.now().isoformat()
+    conn = _get_db()
+    rows = conn.execute(
+        "SELECT * FROM goals WHERE status = 'active' AND next_check_in <= ? ORDER BY next_check_in ASC",
+        (now,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def record_check_in(goal_id: str, response: str, practiced: bool) -> None:
+    now = datetime.now()
+    conn = _get_db()
+    conn.execute(
+        "INSERT INTO check_ins (goal_id, response, practiced, created_at) VALUES (?, ?, ?, ?)",
+        (goal_id, response, 1 if practiced else 0, now.isoformat()),
+    )
+    # Update goal
+    goal = conn.execute("SELECT * FROM goals WHERE id = ?", (goal_id,)).fetchone()
+    if goal:
+        cadence = goal["cadence"]
+        streak = (goal["streak"] + 1) if practiced else 0
+        next_check = (now + timedelta(hours=CADENCE_HOURS.get(cadence, 24))).isoformat()
+        conn.execute(
+            """UPDATE goals SET last_check_in = ?, next_check_in = ?, streak = ?,
+               total_check_ins = total_check_ins + 1 WHERE id = ?""",
+            (now.isoformat(), next_check, streak, goal_id),
+        )
+    conn.commit()
+    conn.close()
+
+
+def get_goal_check_ins(goal_id: str) -> List[Dict[str, Any]]:
+    conn = _get_db()
+    rows = conn.execute(
+        "SELECT * FROM check_ins WHERE goal_id = ? ORDER BY created_at DESC LIMIT 10",
+        (goal_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def update_goal_due_date(goal_id: str, due_date: str) -> bool:
+    conn = _get_db()
+    cursor = conn.execute("UPDATE goals SET due_date = ? WHERE id = ?", (due_date, goal_id))
+    conn.commit()
+    conn.close()
+    return cursor.rowcount > 0
+
+
+def archive_goal(goal_id: str) -> bool:
+    conn = _get_db()
+    cursor = conn.execute("UPDATE goals SET status = 'archived' WHERE id = ?", (goal_id,))
+    conn.commit()
+    conn.close()
+    return cursor.rowcount > 0

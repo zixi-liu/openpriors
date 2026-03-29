@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import PlanCard from './PlanCard.tsx'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   options?: Option[]
+  artifacts?: any
 }
 
 interface Option {
@@ -55,6 +57,12 @@ export function ChatMessages() {
                 </ReactMarkdown>
               ) : msg.content}
             </div>
+
+            {msg.artifacts?.type === 'plan' && (
+              <div className="mt-3">
+                <PlanCard title={msg.artifacts.title} goals={msg.artifacts.goals} />
+              </div>
+            )}
 
             {msg.options && msg.options.length > 0 && (
               <div className="mt-2 space-y-1.5">
@@ -185,7 +193,7 @@ export default function ChatProvider({ children, existingSessionId, onSessionRea
     })
     const chatData = await chatRes.json()
     if (chatData.success) {
-      setMessages([{ role: 'assistant', content: chatData.message, options: chatData.options }])
+      setMessages([{ role: 'assistant', content: chatData.message, options: chatData.options, artifacts: chatData.artifacts }])
     }
   }
 
@@ -247,7 +255,7 @@ export default function ChatProvider({ children, existingSessionId, onSessionRea
       })
       const data = await res.json()
       if (data.success) {
-        setMessages([...newMessages, { role: 'assistant', content: data.message, options: data.options }])
+        setMessages([...newMessages, { role: 'assistant', content: data.message, options: data.options, artifacts: data.artifacts }])
       }
     } catch {
       setMessages([...newMessages, { role: 'assistant', content: 'Something went wrong.' }])

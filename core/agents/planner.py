@@ -100,16 +100,8 @@ async def run_planner_turn(
                     "cadence": goal.get("cadence", "daily"),
                 })
 
-            cadence_emoji = {"daily": "☀️", "every_2_days": "📅", "weekly": "📆"}
-            summary = f"## {plan.get('title', 'Practice Plan')}\n\n"
-            for i, g in enumerate(goals_created, 1):
-                cadence_label = {"daily": "Daily", "every_2_days": "Every 2 days", "weekly": "Weekly"}.get(g["cadence"], g["cadence"])
-                emoji = cadence_emoji.get(g["cadence"], "✦")
-                summary += f"{i}. {g['description']}\n   {emoji} *{cadence_label}*\n\n"
-            summary += f"---\n\n✅ **{len(goals_created)} goals created.** I'll check in with you based on the cadence you set."
-
             return AgentResponse(
-                content=summary,
+                content=f"Here's your plan: **{plan.get('title', 'Practice Plan')}** — {len(goals_created)} goals created.",
                 artifacts={"type": "plan", "goals": goals_created, "title": plan.get("title", "Practice Plan")},
                 done=True,
             )
