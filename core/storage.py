@@ -163,7 +163,7 @@ def save_prior(prior: Dict[str, Any], source_title: str = "", material_id: str =
     date_str = now.strftime("%Y-%m-%d")
 
     # Write .md file
-    slug = prior["name"].lower().replace(" ", "-")[:30]
+    slug = prior["name"].lower().replace(" ", "-").replace("/", "-").replace("\\", "-")[:30]
     filename = f"{date_str}-{slug}.md"
     priors_dir = get_priors_dir()
     priors_dir.mkdir(parents=True, exist_ok=True)
