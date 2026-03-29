@@ -248,16 +248,30 @@ async def run_agent_turn(
     sub_agent = detect_sub_agent(conversation, user_message)
     if sub_agent:
         context = get_sub_agent_context(conversation)
-        # Strip type tags from message
         clean_message = user_message.split("[type:")[0].strip() if "[type:" in user_message else user_message
-        # Filter conversation to only user/assistant messages, strip routing tags
-        clean_convo = []
-        for m in conversation:
-            if m.get("role") in ("user", "assistant") and not m.get("tool_calls"):
+
+        # Check if this sub-agent is already active (continuing) or just started (new)
+        already_active = False
+        for msg in reversed(conversation):
+            if f"[ACTIVE_AGENT:{sub_agent}]" in msg.get("content", ""):
+                already_active = True
+                break
+
+        if already_active:
+            # Continue: only pass messages from after the agent was activated
+            clean_convo = []
+            found_start = False
+            for m in conversation:
                 content = m.get("content", "")
-                content = content.split("[ACTIVE_AGENT:")[0].strip() if "[ACTIVE_AGENT:" in content else content
-                content = content.split("[type:")[0].strip() if "[type:" in content else content
-                clean_convo.append({"role": m["role"], "content": content})
+                if f"[ACTIVE_AGENT:{sub_agent}]" in content:
+                    found_start = True
+                if found_start and m.get("role") in ("user", "assistant") and not m.get("tool_calls"):
+                    content = content.split("[ACTIVE_AGENT:")[0].strip()
+                    content = content.split("[type:")[0].strip()
+                    clean_convo.append({"role": m["role"], "content": content})
+        else:
+            # New sub-agent: start fresh, no prior conversation
+            clean_convo = []
 
         if sub_agent == "reflection":
             from core.agents.reflection import run_reflection_turn
